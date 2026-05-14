@@ -34,7 +34,7 @@ jobs:
 
   docker-publish:
     name: Build and push Docker image
-    needs: test-and-build
+    needs: test
     # Only push images on real commits, never on pull requests from forks.
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
