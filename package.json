@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node api.js",
-    "dev": "node --watch api.js",
+    "dev": "node --env-file=.env --watch api.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
