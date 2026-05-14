@@ -5,10 +5,9 @@ on:
     branches:
       - '**'
   pull_request:
-  workflow_dispatch:
 
 jobs:
-  test-and-build:
+  test:
     runs-on: ubuntu-latest
     env:
       PORT: 3001
@@ -32,9 +31,6 @@ jobs:
 
       - name: Run tests
         run: npm test
-
-      - name: Build application
-        run: npm run build
 
   docker-publish:
     name: Build and push Docker image
