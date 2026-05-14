@@ -18,8 +18,6 @@ function verifyPassword(password, hash) {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, '..');
-const distPath = path.join(rootDir, 'frontend', 'dist');
 const uploadsDir = path.join(__dirname, 'uploads');
 const port = process.env.PORT || 3001;
 const sessionCookieName = 'hotel_session';
