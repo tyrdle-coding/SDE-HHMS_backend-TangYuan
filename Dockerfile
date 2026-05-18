@@ -1,11 +1,7 @@
-# syntax=docker/dockerfile:1.7
-
 FROM node:22-alpine
 
 ENV NODE_ENV=production \
     PORT=3001
-
-RUN apk upgrade --no-cache
 
 WORKDIR /app
 
