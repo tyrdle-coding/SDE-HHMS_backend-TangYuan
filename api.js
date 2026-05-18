@@ -22,6 +22,7 @@ const uploadsDir = path.join(__dirname, 'uploads');
 const fontsDir = path.join(__dirname, 'fonts');
 const port = process.env.PORT || 3001;
 const sessionCookieName = 'hotel_session';
+const storageBucket = process.env.SUPABASE_STORAGE_BUCKET || 'room-images';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -34,16 +35,22 @@ try {
   await fs.mkdir(uploadsDir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new Error('Only image files are allowed'));
+      return;
+    }
+    cb(null, true);
   },
 });
-const upload = multer({ storage });
+
+function createStoragePath(file) {
+  const extension = path.extname(file.originalname).toLowerCase() || '.jpg';
+  return `rooms/${crypto.randomUUID()}${extension}`;
+}
 
 function publicUser(user) {
   return {
@@ -385,12 +392,27 @@ app.use(cors({ origin: process.env.APP_URL, credentials: true }));
   });
 
   // ── Upload ────────────────────────────────────────────────────────────────
-  app.post('/api/upload', requireAdmin, upload.single('image'), (req, res) => {
+  app.post('/api/upload', requireAdmin, upload.single('image'), async (req, res) => {
     if (!req.file) {
       res.status(400).json({ message: 'No file uploaded' });
       return;
     }
-    res.json({ url: `/uploads/${req.file.filename}` });
+
+    const storagePath = createStoragePath(req.file);
+    const { error } = await supabase.storage
+      .from(storageBucket)
+      .upload(storagePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      });
+
+    if (error) {
+      res.status(500).json({ message: error.message });
+      return;
+    }
+
+    const { data } = supabase.storage.from(storageBucket).getPublicUrl(storagePath);
+    res.json({ url: data.publicUrl, path: storagePath });
   });
 
   // ── Rooms ─────────────────────────────────────────────────────────────────

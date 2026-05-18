@@ -44,6 +44,7 @@ function resetDb() {
       { id: 'B004', room_id: '1', room_name: 'Deluxe Room', user_id: 'G001', user_name: 'Guest', user_email: 'guest@gmail.com', check_in: '2026-04-01', check_out: '2026-04-05', guests: 2, total_price: 1760, status: 'confirmed', payment_status: 'paid', payment_method: 'bank_transfer', created_at: '2025-12-04T00:00:00.000Z', phone: '+60 16-555 0000', special_requests: '' },
       { id: 'B005', room_id: '2', room_name: 'Standard Room', user_id: 'U001', user_name: 'Admin', user_email: 'admin@hhotel.com', check_in: '2026-05-01', check_out: '2026-05-02', guests: 1, total_price: 220, status: 'confirmed', payment_status: 'paid', payment_method: 'bank_transfer', created_at: '2025-12-05T00:00:00.000Z', phone: '+60 12-345 6789', special_requests: '' },
     ],
+    storage: [],
   };
 }
 
@@ -109,7 +110,20 @@ function createQueryBuilder(source, table) {
 
 // ── Register mock before importing api.js ─────────────────────────────────────
 jest.unstable_mockModule('@supabase/supabase-js', () => ({
-  createClient: () => ({ from: (table) => createQueryBuilder(db, table) }),
+  createClient: () => ({
+    from: (table) => createQueryBuilder(db, table),
+    storage: {
+      from: (bucket) => ({
+        upload: async (filePath, body, options) => {
+          db.storage.push({ bucket, filePath, body, options });
+          return { data: { path: filePath }, error: null };
+        },
+        getPublicUrl: (filePath) => ({
+          data: { publicUrl: `https://example.supabase.co/storage/v1/object/public/${bucket}/${filePath}` },
+        }),
+      }),
+    },
+  }),
 }));
 
 const { createApp } = await import('./api.js');
@@ -415,6 +429,27 @@ describe('admin features', () => {
     });
 
     expect(res.status).toBe(403);
+  });
+
+  test('admin uploads room images to Supabase Storage', async () => {
+    const cookie = await loginAs('admin@hhotel.com', 'admin123');
+    const res = await request(app)
+      .post('/api/upload')
+      .set('Cookie', cookie)
+      .attach('image', Buffer.from('fake image bytes'), {
+        filename: 'room.jpg',
+        contentType: 'image/jpeg',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.url).toContain('/storage/v1/object/public/room-images/rooms/');
+    expect(res.body.path).toMatch(/^rooms\/.+\.jpg$/);
+    expect(db.storage).toHaveLength(1);
+    expect(db.storage[0]).toMatchObject({
+      bucket: 'room-images',
+      filePath: res.body.path,
+      options: { contentType: 'image/jpeg', upsert: false },
+    });
   });
 
   test('admin users can create rooms', async () => {
