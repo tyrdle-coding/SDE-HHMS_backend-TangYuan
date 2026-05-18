@@ -245,6 +245,14 @@ app.use(cors({ origin: process.env.APP_URL, credentials: true }));
   app.get('/Roboto-Regular.ttf', (_req, res) => {
     res.type('font/ttf').sendFile(path.join(fontsDir, 'Roboto-Regular.ttf'));
   });
+  app.get('/', (_req, res) => {
+    res.json({
+      ok: true,
+      service: 'SDE-HHMS backend',
+      frontendUrl: process.env.APP_URL ?? null,
+      healthUrl: '/api/health',
+    });
+  });
   app.use(attachAuth);
   app.use('/uploads', express.static(uploadsDir));
 
