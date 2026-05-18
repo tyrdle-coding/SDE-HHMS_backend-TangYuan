@@ -19,6 +19,7 @@ function verifyPassword(password, hash) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, 'uploads');
+const fontsDir = path.join(__dirname, 'fonts');
 const port = process.env.PORT || 3001;
 const sessionCookieName = 'hotel_session';
 
@@ -238,6 +239,12 @@ export function createApp() {
 
 app.use(cors({ origin: process.env.APP_URL, credentials: true }));
   app.use(express.json());
+  app.get('/DMSans-Regular.ttf', (_req, res) => {
+    res.type('font/ttf').sendFile(path.join(fontsDir, 'DMSans-Regular.ttf'));
+  });
+  app.get('/Roboto-Regular.ttf', (_req, res) => {
+    res.type('font/ttf').sendFile(path.join(fontsDir, 'Roboto-Regular.ttf'));
+  });
   app.use(attachAuth);
   app.use('/uploads', express.static(uploadsDir));
 

@@ -13,6 +13,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY api.js auth.js ./
+COPY fonts ./fonts
 
 RUN mkdir -p /app/uploads \
  && addgroup -S app \
