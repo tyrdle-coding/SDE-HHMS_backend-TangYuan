@@ -1,0 +1,33 @@
+# Local development for the backend service.
+#
+# Uses the SAME Dockerfile that CI publishes to Docker Hub and Render runs
+# in staging / production - only environment variables differ.
+#
+# Usage:
+#   docker compose up --build     # build image and run the backend locally
+#   docker compose down           # stop the container
+#
+# Requires a .env file with SUPABASE_URL, SUPABASE_ANON_KEY, AUTH_SECRET, etc.
+# (see .env.example for the full list).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hotel-backend:dev
+    container_name: hotel-backend
+    restart: unless-stopped
+    # Load Supabase credentials and other secrets from .env (gitignored).
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    volumes:
+      # Persist uploads across container restarts
+      - hotel_uploads:/app/uploads
+
+volumes:
+  hotel_uploads:
